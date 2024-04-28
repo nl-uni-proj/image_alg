@@ -1,4 +1,4 @@
-# Image_Alg is an university assignment
+# Image_Alg is a university assignment
 
 ## Building
 
