@@ -1,13 +1,13 @@
-# Image_Alg is an university assignment (not meant for use)
+# Image_Alg is an university assignment
 
-# Building
+## Building
 
-1. To build have rust toolchain installed via `rustup`  
-2. Use `cargo build --release` in the terminal  
+1. Have rust toolchain installed via `rustup`  
+2. Use `cargo build --release` in the terminal
 
-# Usage
+## Usage
 
-1. Add `.target/release` directory to `PATH` env variable  
-2. Use `image_alg help` to learn the usage  
+1. Add `.target/release` directory to `PATH`  
+2. Use `image_alg help` to learn the usage
 
-Generated image results are saved to `./image_process_results` directory  
+Generated image results are saved to `./image_process_results` directory
