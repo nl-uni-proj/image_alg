@@ -4,6 +4,7 @@ use std::path::PathBuf;
 mod ansi;
 mod im;
 mod task_1;
+mod task_2;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -21,6 +22,22 @@ fn main() {
         "task1" => {
             if let Some(file) = args.get(1) {
                 cmd_task1(file);
+            } else {
+                eprintln!("\nmissing path to image or directory\n");
+            }
+        }
+        "task2" => {
+            if let Some(file) = args.get(1) {
+                if let Some(width_downsize) = args.get(2) {
+                    cmd_task2(
+                        file,
+                        width_downsize
+                            .parse::<u32>()
+                            .expect("parsed width_downsize integer"),
+                    );
+                } else {
+                    eprintln!("\nmissing width_downsize amount\n");
+                }
             } else {
                 eprintln!("\nmissing path to image or directory\n");
             }
@@ -46,11 +63,16 @@ r#"
   {c}image_alg <command>
 
 {g}Commands:
-  {c}task1 [path]   {r}Analyze png image file or directory
-  {c}h, help        {r}Print help information
+  {c}task1 [path]                 {r}Analyze png image: file or in directory
+  {c}task2 [path] [width amount]  {r}Downsize horizontal: image file or in directory
+  {c}h, help                      {r}Print help information
 "#);
 }
 
 fn cmd_task1(path: &str) {
     task_1::run(&PathBuf::from(path));
+}
+
+fn cmd_task2(path: &str, width_downsize: u32) {
+    task_2::run(&PathBuf::from(path), width_downsize);
 }

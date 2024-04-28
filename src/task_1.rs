@@ -6,6 +6,7 @@ pub fn run(target: &PathBuf) {
         eprintln!("path was not found `{}`", target.to_string_lossy());
         return;
     }
+    // @check ext
     if target.is_file() {
         analyze_image(target);
     }
@@ -13,8 +14,11 @@ pub fn run(target: &PathBuf) {
         let read_dir = std::fs::read_dir(target).expect("read dir");
         for entry in read_dir.flatten() {
             let path = entry.path();
-            if path.is_file() && path.extension().unwrap_or_default() == "png" {
-                analyze_image(&path);
+            if path.is_file() {
+                let ext = path.extension().unwrap_or_default().to_str().expect("utf8");
+                if matches!(ext, "png" | "jpg" | "jpeg") {
+                    analyze_image(&path);
+                }
             }
         }
     }
@@ -35,8 +39,8 @@ fn analyze_image(path: &PathBuf) {
     if !image_dir.exists() {
         std::fs::create_dir(&image_dir).expect("dir created");
     }
-
     let image = im::image_open(&path);
+
     image_into_black_white(
         image.clone(),
         &image_dir.join(format!("{name}_black_white.png")),

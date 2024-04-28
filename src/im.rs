@@ -58,3 +58,13 @@ pub fn image_buffer_save_png(
         .expect("save with format");
     println!("saved: `{}`", save_path.to_string_lossy());
 }
+
+pub fn image_buffer_luma16_save_png(
+    buffer: image::ImageBuffer<image::Luma<u16>, Vec<u16>>,
+    save_path: &PathBuf,
+) {
+    buffer
+        .save_with_format(save_path, image::ImageFormat::Png)
+        .expect("save with format");
+    println!("saved: `{}`", save_path.to_string_lossy());
+}
