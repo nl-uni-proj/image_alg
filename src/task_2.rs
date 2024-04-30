@@ -1,49 +1,14 @@
+use crate::im;
 use image::{GenericImage, GenericImageView, Pixel};
 use std::path::PathBuf;
 
-use crate::im;
-
 pub fn run(target: &PathBuf, width_downsize: u32) {
-    if !target.exists() {
-        eprintln!("path was not found `{}`", target.to_string_lossy());
-        return;
-    }
-    // @check ext
-    if target.is_file() {
-        resize_image(target, width_downsize);
-    }
-    if target.is_dir() {
-        let read_dir = std::fs::read_dir(target).expect("read dir");
-        for entry in read_dir.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                let ext = path.extension().unwrap_or_default().to_str().expect("utf8");
-                if matches!(ext, "png" | "jpg" | "jpeg") {
-                    resize_image(&path, width_downsize);
-                }
-            }
-        }
+    for (image, info) in im::open_and_setup_output(target) {
+        resize_image(image, info, width_downsize)
     }
 }
 
-fn resize_image(path: &PathBuf, mut width_downsize: u32) {
-    let name = path
-        .file_stem()
-        .expect("image filename")
-        .to_str()
-        .expect("utf8 filename");
-
-    let results_path = PathBuf::from("image_process_results");
-    if !results_path.exists() {
-        std::fs::create_dir(&results_path).expect("dir created");
-    }
-    let image_dir = results_path.join(name);
-    if !image_dir.exists() {
-        std::fs::create_dir(&image_dir).expect("dir created");
-    }
-
-    let mut image = im::image_open(&path);
-
+fn resize_image(mut image: image::DynamicImage, info: im::ImageInfo, mut width_downsize: u32) {
     // limiting downsize amount
     if image.width() <= width_downsize {
         width_downsize = image.width() - 1;
@@ -51,7 +16,10 @@ fn resize_image(path: &PathBuf, mut width_downsize: u32) {
 
     // visualize scaled up gradient image
     let gradient = gradient_magnitude(&image, 100);
-    im::image_buffer_luma16_save_png(gradient, &image_dir.join(format!("{name}_gradient.png")));
+    im::image_buffer_luma16_save_png(
+        gradient,
+        &info.save_path_concat("gradient", image::ImageFormat::Png),
+    );
 
     let mut visualize = true;
     for _ in 0..width_downsize {
@@ -67,12 +35,12 @@ fn resize_image(path: &PathBuf, mut width_downsize: u32) {
 
             im::image_buffer_save_png(
                 image_copy.into_rgb8(),
-                &image_dir.join(format!("{name}_removed_path.png")),
+                &info.save_path_concat("removed_path", image::ImageFormat::Png),
             );
 
             im::image_buffer_luma16_save_png(
                 table.clone().to_gradient_buffer(),
-                &image_dir.join(format!("{name}_dp_table_weights.png")),
+                &info.save_path_concat("dp_table_weights", image::ImageFormat::Png),
             );
         }
         remove_path(&mut image, path);
@@ -80,7 +48,7 @@ fn resize_image(path: &PathBuf, mut width_downsize: u32) {
 
     im::image_buffer_save_png(
         image.into_rgb8(),
-        &image_dir.join(format!("{name}_resized.png")),
+        &info.save_path_concat("resized", image::ImageFormat::Png),
     );
 }
 

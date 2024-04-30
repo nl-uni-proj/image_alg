@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{ffi::OsStr, path::PathBuf};
 
 pub const COLOR_BLACK: image::Rgb<u8> = image::Rgb([0, 0, 0]);
 pub const COLOR_WHITE: image::Rgb<u8> = image::Rgb([255, 255, 255]);
@@ -34,7 +34,79 @@ impl RgbF {
     }
 }
 
-pub fn image_open(path: &PathBuf) -> image::DynamicImage {
+pub struct ImageInfo {
+    image_dir: PathBuf,
+    name: String,
+}
+
+impl ImageInfo {
+    pub fn save_path_concat(&self, postfix: &str, format: image::ImageFormat) -> PathBuf {
+        self.image_dir.join(format!(
+            "{}_{}.{}",
+            self.name,
+            postfix,
+            format.extensions_str()[0]
+        ))
+    }
+}
+
+pub fn open_and_setup_output(target: &PathBuf) -> Vec<(image::DynamicImage, ImageInfo)> {
+    if !target.exists() {
+        eprintln!("path was not found `{}`", target.to_string_lossy());
+        return Vec::new();
+    }
+
+    let mut image_paths = Vec::new();
+    if target.is_file() {
+        if ext_is_supported(target.extension()) {
+            image_paths.push(target.clone());
+        }
+    }
+    if target.is_dir() {
+        let read_dir = std::fs::read_dir(target).expect("read dir");
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            if ext_is_supported(path.extension()) {
+                image_paths.push(path);
+            }
+        }
+    }
+
+    let mut image_inputs = Vec::new();
+
+    let results_path = PathBuf::from("image_process_results");
+    if !results_path.exists() {
+        std::fs::create_dir(&results_path).expect("dir created");
+    }
+
+    for path in image_paths {
+        let name = path
+            .file_stem()
+            .expect("image filename")
+            .to_str()
+            .expect("utf8 filename");
+        let image_dir = results_path.join(name);
+        if !image_dir.exists() {
+            std::fs::create_dir(&image_dir).expect("dir created");
+        }
+        image_inputs.push((
+            image_open(&path),
+            ImageInfo {
+                image_dir,
+                name: name.to_string(),
+            },
+        ));
+    }
+
+    image_inputs
+}
+
+fn ext_is_supported(ext: Option<&OsStr>) -> bool {
+    let ext = ext.unwrap_or_default().to_str().expect("utf8");
+    matches!(ext, "png" | "jpg" | "jpeg")
+}
+
+fn image_open(path: &PathBuf) -> image::DynamicImage {
     let image = image::open(path).expect("image open");
     println!(
         "{}",

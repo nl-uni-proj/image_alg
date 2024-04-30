@@ -2,55 +2,22 @@ use super::im::{self, RgbF};
 use std::path::PathBuf;
 
 pub fn run(target: &PathBuf) {
-    if !target.exists() {
-        eprintln!("path was not found `{}`", target.to_string_lossy());
-        return;
-    }
-    // @check ext
-    if target.is_file() {
-        analyze_image(target);
-    }
-    if target.is_dir() {
-        let read_dir = std::fs::read_dir(target).expect("read dir");
-        for entry in read_dir.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                let ext = path.extension().unwrap_or_default().to_str().expect("utf8");
-                if matches!(ext, "png" | "jpg" | "jpeg") {
-                    analyze_image(&path);
-                }
-            }
-        }
+    for (image, info) in im::open_and_setup_output(target) {
+        analyze_image(image, info);
     }
 }
 
-fn analyze_image(path: &PathBuf) {
-    let name = path
-        .file_stem()
-        .expect("image filename")
-        .to_str()
-        .expect("utf8 filename");
-
-    let results_path = PathBuf::from("image_process_results");
-    if !results_path.exists() {
-        std::fs::create_dir(&results_path).expect("dir created");
-    }
-    let image_dir = results_path.join(name);
-    if !image_dir.exists() {
-        std::fs::create_dir(&image_dir).expect("dir created");
-    }
-    let image = im::image_open(&path);
-
+fn analyze_image(image: image::DynamicImage, info: im::ImageInfo) {
     image_into_black_white(
         image.clone(),
-        &image_dir.join(format!("{name}_black_white.png")),
+        &info.save_path_concat("black_white", image::ImageFormat::Png),
     );
     image_into_grayscale(
         image,
-        &image_dir.join(format!("{name}_grayscale.png")),
-        &image_dir.join(format!("{name}_horizontal.png")),
-        &image_dir.join(format!("{name}_vertical.png")),
-        &image_dir.join(format!("{name}_bounds.png")),
+        &info.save_path_concat("grayscale", image::ImageFormat::Png),
+        &info.save_path_concat("horizontal", image::ImageFormat::Png),
+        &info.save_path_concat("vertical", image::ImageFormat::Png),
+        &info.save_path_concat("bounds", image::ImageFormat::Png),
     );
 }
 
