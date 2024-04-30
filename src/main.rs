@@ -5,6 +5,7 @@ mod ansi;
 mod im;
 mod task_1;
 mod task_2;
+mod task_3;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -42,6 +43,22 @@ fn main() {
                 eprintln!("\nmissing path to image or directory\n");
             }
         }
+        "task3" => {
+            if let Some(file) = args.get(1) {
+                if let Some(intencity_levels) = args.get(2) {
+                    cmd_task3(
+                        file,
+                        intencity_levels
+                            .parse::<u32>()
+                            .expect("parsed intencity_levels integer"),
+                    );
+                } else {
+                    eprintln!("\nmissing intencity_levels count\n");
+                }
+            } else {
+                eprintln!("\nmissing path to image or directory\n");
+            }
+        }
         _ => {
             eprintln!(
                 "\nunknown command `{}`, use `image_alg help` to learn the usage\n",
@@ -63,9 +80,10 @@ r#"
   {c}image_alg <command>
 
 {g}Commands:
-  {c}task1 [path]                 {r}Analyze png image: file or in directory
-  {c}task2 [path] [width amount]  {r}Downsize horizontal: image file or in directory
-  {c}h, help                      {r}Print help information
+  {c}task1   [path]                {r}Analyze object bounds
+  {c}task2   [path] [width amount] {r}Downsize content aware horizontal
+  {c}task3   [path] [int levels]   {r}Perform block & rotation & intensity transformations
+  {c}h, help                       {r}Print help information
 "#);
 }
 
@@ -75,4 +93,8 @@ fn cmd_task1(path: &str) {
 
 fn cmd_task2(path: &str, width_downsize: u32) {
     task_2::run(&PathBuf::from(path), width_downsize);
+}
+
+fn cmd_task3(path: &str, intensity_levels: u32) {
+    task_3::run(&PathBuf::from(path), intensity_levels);
 }
